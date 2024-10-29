@@ -1,20 +1,49 @@
-#define macro CONSTRUCTOR() = takes(0) returns(0) {
-    0x020 0x00 sstore
-    0x0d 0x01 sstore
-    __RIGHTPAD(0x48656c6c6f2c20776f726c6421) 0x02 sstore
-} 
-
 #define macro MAIN() = takes(0) returns(0) {
-    calldatasize write jumpi
-    0x00 sload 0x00 mstore
-    0x01 sload 0x20 mstore
-    0x02 sload 0x40 mstore
-    0x60 0x00 return
-        write:
-    calldatasize 0x20 lt error jumpi
-    0x00 calldataload 0x02 sstore
-    calldatasize 0x01 sstore
-    0x00 0x00 return
+    calldatasize opcode_test jumpi
+    stop
+        opcode_test:
+    push1 0x00 calldataload
+    push1 0x00 byte
+    
+    dup1 0x01 eq add_opcode jumpi
+    dup1 0x02 eq sub_opcode jumpi
+    dup1 0x03 eq mul_opcode jumpi
+    dup1 0x04 eq div_opcode jumpi
+    dup1 0x05 eq sdiv_opcode jumpi
+    pop error jump
+        add_opcode:
+    pop
+    0x01 calldataload
+    0x21 calldataload
+    add
+    return_value jump
+        sub_opcode:
+    pop
+    0x21 calldataload
+    0x01 calldataload
+    sub
+    return_value jump
+        mul_opcode:
+    pop
+    0x01 calldataload
+    0x21 calldataload
+    mul
+    return_value jump
+        div_opcode:
+    pop
+    0x21 calldataload
+    0x01 calldataload
+    div
+    return_value jump
+        sdiv_opcode:
+    pop
+    0x21 calldataload
+    0x01 calldataload
+    sdiv
+    return_value jump
+        return_value:
+    push1 0x00 mstore
+    0x20 push1 0x00 return
         error:
-    0x00 0x00 revert
+    push1 0x00 push1 0x00 revert
 }

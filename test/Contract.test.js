@@ -8,7 +8,7 @@ async function readBytecode() {
   return byteCode;
 };
 
-describe("Hello World", function () {
+describe("Blockchain diagnostics", function () {
 
   before(async () => {
 
@@ -25,26 +25,109 @@ describe("Hello World", function () {
 
   describe("Functionality", function () {
 
-    it("default return", async () => {
-      let data = await helloWorld.callStatic("0x");
-      let abiCoder = new ethers.AbiCoder;
-      let greeting = abiCoder.decode(["string"], data);
-      expect(greeting).to.deep.equal(["Hello, world!"]);
+    it("adds two values", async () => {
+      let data = await helloWorld.callStatic("0x0100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000002");
+
+      data = await helloWorld.callStatic("0x0100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
+
+      data = await helloWorld.callStatic("0x01fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0000000000000000000000000000000000000000000000000000000000000001");
+      expect(data).to.equal("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+
+      // Overflows
+      data = await helloWorld.callStatic("0x01fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0000000000000000000000000000000000000000000000000000000000000002");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
+
+      // Overflows
+      data = await helloWorld.callStatic("0x01ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+      expect(data).to.equal("0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe");
     });
 
-    it("could set new greeting", async () => {
-      await helloWorld.call("0x48656c6c6f2c20736f6c696469747921");
-      let data = await helloWorld.callStatic("0x");
-      let abiCoder = new ethers.AbiCoder;
-      let greeting = abiCoder.decode(["string"], data);
-      expect(greeting).to.deep.equal(["Hello, solidity!"]);
+    it("subtracts two values", async () => {
+      let data = await helloWorld.callStatic("0x0200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000001");
+
+      data = await helloWorld.callStatic("0x0200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
+
+      // Underflows
+      data = await helloWorld.callStatic("0x0200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001");
+      expect(data).to.equal("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+
+      // Underflows
+      data = await helloWorld.callStatic("0x020000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000001");
     });
 
-    it("reverts if string too big", async () => {
-      await expect(helloWorld.call("0x484848484848484848484848484848484848484848484848484848484848484848"))
-        .to.be.reverted;
+    it("multiplie two values", async () => {
+      let data = await helloWorld.callStatic("0x0300000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
+
+      data = await helloWorld.callStatic("0x0300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
+
+      data = await helloWorld.callStatic("0x0300000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000001");
+
+      data = await helloWorld.callStatic("0x03ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000001");
+      expect(data).to.equal("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+
+      // // Overflows
+      data = await helloWorld.callStatic("0x03ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000002");
+      expect(data).to.equal("0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe");
+
+      // // Overflows
+      data = await helloWorld.callStatic("0x03ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000001");
     });
 
+    it("divide two values", async () => {
+      // 1 / 0 = 0
+      let data = await helloWorld.callStatic("0x0400000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
 
+      // 0 / 0 = 0
+      data = await helloWorld.callStatic("0x0400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
+
+      // 1 / 2 = 0
+      data = await helloWorld.callStatic("0x0400000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
+
+      // 2 / 2 = 1
+      data = await helloWorld.callStatic("0x0400000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000001");
+
+      // 3 / 2 = 1
+      data = await helloWorld.callStatic("0x0400000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000002");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000001");
+    });
+
+    it("signed divide two values", async () => {
+      // 1 / 0 = 0
+      let data = await helloWorld.callStatic("0x0500000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
+
+      // 0 / 0 = 0
+      data = await helloWorld.callStatic("0x0500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
+
+      // -1 / 0 = 0
+      data = await helloWorld.callStatic("0x05ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
+
+      // -1 / -1 = 1
+      data = await helloWorld.callStatic("0x05ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+      expect(data).to.equal("0x0000000000000000000000000000000000000000000000000000000000000001");
+
+      // -1 / 1 = -1
+      data = await helloWorld.callStatic("0x05ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000001");
+      expect(data).to.equal("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+
+      // special case with overflow
+      data = await helloWorld.callStatic("0x058000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+      expect(data).to.equal("0x8000000000000000000000000000000000000000000000000000000000000000");
+    });
   });
 });
